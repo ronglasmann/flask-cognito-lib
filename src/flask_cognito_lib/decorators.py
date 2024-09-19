@@ -2,7 +2,6 @@ from functools import wraps
 from typing import Iterable, Optional, Union
 
 from flask import Response
-from flask import current_app as app
 from flask import redirect, request, session
 from werkzeug.local import LocalProxy
 
@@ -28,10 +27,9 @@ cognito_auth: CognitoAuth = LocalProxy(
 
 def remove_from_session(keys: Iterable[str]):
     """Remove an entry from the session"""
-    with app.app_context():
-        for key in keys:
-            if key in session:
-                session.pop(key)
+    for key in keys:
+        if key in session:
+            session.pop(key)
 
 
 def validate_and_store_tokens(
@@ -101,32 +99,31 @@ def cognito_login(fn):
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        with app.app_context():
-            # store parameters in the session that are passed to Cognito
-            # and required for JWT verification
-            code_verifier = generate_code_verifier()
-            cognito_session = {
-                "code_verifier": code_verifier,
-                "code_challenge": generate_code_challenge(code_verifier),
-                "nonce": secure_random(),
-            }
-            session.update(cognito_session)
+        # store parameters in the session that are passed to Cognito
+        # and required for JWT verification
+        code_verifier = generate_code_verifier()
+        cognito_session = {
+            "code_verifier": code_verifier,
+            "code_challenge": generate_code_challenge(code_verifier),
+            "nonce": secure_random(),
+        }
+        session.update(cognito_session)
 
-            # Add suport for custom state values which are appended to a secure
-            # random value for additional CRSF protection
-            state = secure_random()
-            custom_state = session.get("state")
-            if custom_state:
-                state += f"__{custom_state}"
+        # Add suport for custom state values which are appended to a secure
+        # random value for additional CRSF protection
+        state = secure_random()
+        custom_state = session.get("state")
+        if custom_state:
+            state += f"__{custom_state}"
 
-            session.update({"state": state})
+        session.update({"state": state})
 
-            login_url = cognito_auth.cognito_service.get_sign_in_url(
-                code_challenge=session["code_challenge"],
-                state=session["state"],
-                nonce=session["nonce"],
-                scopes=cognito_auth.cfg.cognito_scopes,
-            )
+        login_url = cognito_auth.cognito_service.get_sign_in_url(
+            code_challenge=session["code_challenge"],
+            state=session["state"],
+            nonce=session["nonce"],
+            scopes=cognito_auth.cfg.cognito_scopes,
+        )
 
         return redirect(login_url)
 
@@ -141,51 +138,50 @@ def cognito_login_callback(fn):
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        with app.app_context():
-            # Get the access token return after auth flow with Cognito
-            code_verifier = session["code_verifier"]
-            state = session["state"]
-            nonce = session["nonce"]
+        # Get the access token return after auth flow with Cognito
+        code_verifier = session["code_verifier"]
+        state = session["state"]
+        nonce = session["nonce"]
 
-            # exchange the code for an access token
-            # also confirms the returned state is correct
-            tokens = cognito_auth.get_tokens(
-                request_args=request.args,
-                expected_state=state,
-                code_verifier=code_verifier,
-            )
+        # exchange the code for an access token
+        # also confirms the returned state is correct
+        tokens = cognito_auth.get_tokens(
+            request_args=request.args,
+            expected_state=state,
+            code_verifier=code_verifier,
+        )
 
-            # Store the tokens in the session
-            validate_and_store_tokens(tokens=tokens, nonce=nonce)
+        # Store the tokens in the session
+        validate_and_store_tokens(tokens=tokens, nonce=nonce)
 
-            # Remove one-time use variables now we have completed the auth flow
-            remove_from_session(("code_challenge", "code_verifier", "nonce"))
+        # Remove one-time use variables now we have completed the auth flow
+        remove_from_session(("code_challenge", "code_verifier", "nonce"))
 
-            # split out the random part of the state value (in case the user
-            # specified their own custom state value)
-            state = session.get("state").split("__")[-1]
-            session.update({"state": state})
+        # split out the random part of the state value (in case the user
+        # specified their own custom state value)
+        state = session.get("state").split("__")[-1]
+        session.update({"state": state})
 
-            # return and set the JWT as a http only cookie
-            resp = fn(*args, **kwargs)
+        # return and set the JWT as a http only cookie
+        resp = fn(*args, **kwargs)
 
-            # Store the access token in a HTTP only secure cookie
+        # Store the access token in a HTTP only secure cookie
+        store_token_in_cookie(
+            resp=resp,
+            token=tokens.access_token,
+            cookie_name=cognito_auth.cfg.COOKIE_NAME,
+            max_age=cognito_auth.cfg.max_cookie_age_seconds,
+        )
+
+        # Grab the refresh token and store in a HTTP only secure cookie
+        if cognito_auth.cfg.refresh_flow_enabled and tokens.refresh_token:
             store_token_in_cookie(
                 resp=resp,
-                token=tokens.access_token,
-                cookie_name=cognito_auth.cfg.COOKIE_NAME,
-                max_age=cognito_auth.cfg.max_cookie_age_seconds,
+                token=tokens.refresh_token,
+                cookie_name=cognito_auth.cfg.COOKIE_NAME_REFRESH,
+                max_age=cognito_auth.cfg.max_refresh_cookie_age_seconds,
+                encrypt=cognito_auth.cfg.refresh_cookie_encrypted,
             )
-
-            # Grab the refresh token and store in a HTTP only secure cookie
-            if cognito_auth.cfg.refresh_flow_enabled and tokens.refresh_token:
-                store_token_in_cookie(
-                    resp=resp,
-                    token=tokens.refresh_token,
-                    cookie_name=cognito_auth.cfg.COOKIE_NAME_REFRESH,
-                    max_age=cognito_auth.cfg.max_refresh_cookie_age_seconds,
-                    encrypt=cognito_auth.cfg.refresh_cookie_encrypted,
-                )
 
         return resp
 
@@ -197,33 +193,32 @@ def cognito_refresh_callback(fn):
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        with app.app_context():
-            if not cognito_auth.cfg.refresh_flow_enabled:
-                raise CognitoError("Refresh flow is not enabled")
+        if not cognito_auth.cfg.refresh_flow_enabled:
+            raise CognitoError("Refresh flow is not enabled")
 
-            refresh_token = get_token_from_cookie(cognito_auth.cfg.COOKIE_NAME_REFRESH)
+        refresh_token = get_token_from_cookie(cognito_auth.cfg.COOKIE_NAME_REFRESH)
 
-            if not refresh_token:
-                raise CognitoError("No refresh token provided")
+        if not refresh_token:
+            raise CognitoError("No refresh token provided")
 
-            # Exchange refresh token for the new access token.
-            tokens = cognito_auth.exchange_refresh_token(
-                refresh_token=refresh_token,
-            )
+        # Exchange refresh token for the new access token.
+        tokens = cognito_auth.exchange_refresh_token(
+            refresh_token=refresh_token,
+        )
 
-            # Store the tokens in the session
-            validate_and_store_tokens(tokens=tokens)
+        # Store the tokens in the session
+        validate_and_store_tokens(tokens=tokens)
 
-            # Return and set the JWT as a http only cookie
-            resp = fn(*args, **kwargs)
+        # Return and set the JWT as a http only cookie
+        resp = fn(*args, **kwargs)
 
-            # Store the access token in a HTTP only secure cookie
-            store_token_in_cookie(
-                resp=resp,
-                token=tokens.access_token,
-                cookie_name=cognito_auth.cfg.COOKIE_NAME,
-                max_age=cognito_auth.cfg.max_cookie_age_seconds,
-            )
+        # Store the access token in a HTTP only secure cookie
+        store_token_in_cookie(
+            resp=resp,
+            token=tokens.access_token,
+            cookie_name=cognito_auth.cfg.COOKIE_NAME,
+            max_age=cognito_auth.cfg.max_cookie_age_seconds,
+        )
 
         return resp
 
@@ -235,22 +230,21 @@ def cognito_logout(fn):
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        with app.app_context():
-            # logout at cognito and remove the cookies
-            resp = redirect(cognito_auth.cfg.logout_endpoint)
-            resp.delete_cookie(
-                key=cognito_auth.cfg.COOKIE_NAME, domain=cognito_auth.cfg.cookie_domain
-            )
+        # logout at cognito and remove the cookies
+        resp = redirect(cognito_auth.cfg.logout_endpoint)
+        resp.delete_cookie(
+            key=cognito_auth.cfg.COOKIE_NAME, domain=cognito_auth.cfg.cookie_domain
+        )
 
-            # Revoke the refresh token if it exists
-            if refresh_token := get_token_from_cookie(
-                cognito_auth.cfg.COOKIE_NAME_REFRESH
-            ):
-                cognito_auth.revoke_refresh_token(refresh_token)
-                resp.delete_cookie(
-                    key=cognito_auth.cfg.COOKIE_NAME_REFRESH,
-                    domain=cognito_auth.cfg.cookie_domain,
-                )
+        # Revoke the refresh token if it exists
+        if refresh_token := get_token_from_cookie(
+            cognito_auth.cfg.COOKIE_NAME_REFRESH
+        ):
+            cognito_auth.revoke_refresh_token(refresh_token)
+            resp.delete_cookie(
+                key=cognito_auth.cfg.COOKIE_NAME_REFRESH,
+                domain=cognito_auth.cfg.cookie_domain,
+            )
 
         # Cognito will redirect to the sign-out URL (if set) or else use
         # the callback URL
@@ -265,37 +259,36 @@ def auth_required(groups: Optional[Iterable[str]] = None, any_group: bool = Fals
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
-            with app.app_context():
-                # return early if the extension is disabled
-                if cognito_auth.cfg.disabled:
-                    return fn(*args, **kwargs)
+            # return early if the extension is disabled
+            if cognito_auth.cfg.disabled:
+                return fn(*args, **kwargs)
 
-                # Try and validate the access token stored in the cookie
-                try:
-                    access_token = request.cookies.get(cognito_auth.cfg.COOKIE_NAME)
-                    claims = cognito_auth.verify_access_token(
-                        token=access_token,
-                        leeway=cognito_auth.cfg.cognito_expiration_leeway,
-                    )
-                    valid = True
+            # Try and validate the access token stored in the cookie
+            try:
+                access_token = request.cookies.get(cognito_auth.cfg.COOKIE_NAME)
+                claims = cognito_auth.verify_access_token(
+                    token=access_token,
+                    leeway=cognito_auth.cfg.cognito_expiration_leeway,
+                )
+                valid = True
 
-                    # Check for required group membership
-                    if groups:
-                        if any_group:
-                            valid = any(g in claims["cognito:groups"] for g in groups)
-                        else:
-                            valid = all(g in claims["cognito:groups"] for g in groups)
+                # Check for required group membership
+                if groups:
+                    if any_group:
+                        valid = any(g in claims["cognito:groups"] for g in groups)
+                    else:
+                        valid = all(g in claims["cognito:groups"] for g in groups)
 
-                        if not valid:
-                            raise CognitoGroupRequiredError
+                    if not valid:
+                        raise CognitoGroupRequiredError
 
-                except (TokenVerifyError, KeyError):
-                    valid = False
+            except (TokenVerifyError, KeyError):
+                valid = False
 
-                if valid:
-                    return fn(*args, **kwargs)
+            if valid:
+                return fn(*args, **kwargs)
 
-                raise AuthorisationRequiredError
+            raise AuthorisationRequiredError
 
         return decorator
 
