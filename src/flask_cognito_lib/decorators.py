@@ -1,3 +1,4 @@
+import os
 from functools import wraps
 from typing import Iterable, Optional, Union
 
@@ -19,6 +20,7 @@ from flask_cognito_lib.utils import (
     generate_code_challenge,
     generate_code_verifier,
     secure_random,
+    validate_access
 )
 
 cognito_auth: CognitoAuth = LocalProxy(
@@ -46,13 +48,48 @@ def validate_and_store_tokens(
     session.update({"claims": claims})
 
     # Grab the user info from the user endpoint and store in the session
-    if tokens.id_token is not None:
+    user_info = None
+    if cognito_auth.cfg.disabled:
+        print(f"cognito auth disabled")
+        user_id = os.getenv("AWS_COGNITO_DISABLED_USER_ID", None)
+        email = os.getenv("AWS_COGNITO_DISABLED_USER_EMAIL", None)
+        name = os.getenv("AWS_COGNITO_DISABLED_USER_NAME", None)
+        if user_id is None or email is None or name is None:
+            raise Exception(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
+                            f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
+        user_info = {
+            'id': user_id,
+            'email': email,
+            'name': name,
+            'is_active': 'True',
+            # 'groups': '',
+            # 'hashed_password': '',
+        }
+
+    elif tokens.id_token is not None:
         user_info = cognito_auth.verify_id_token(
             token=tokens.id_token,
             nonce=nonce,
             leeway=cognito_auth.cfg.cognito_expiration_leeway,
         )
+        if 'email' in user_info:
+            print(f"email in user_info")
+            user_info['id'] = user_info['sub']
+            user_info['name'] = user_info['email'][:user_info['email'].find('@')]
+            user_info['is_active'] = 'True'
+            # user_info['groups'] = ''
+            # user_info['hashed_password'] = ''
+
+        else:
+            print(f"email not in user_info")
+            user_info = None
+
+    if user_info is not None:
         session.update({"user_info": user_info})
+        session.update({"user": user_info})
+    else:
+        session.pop("user_info")
+        session.pop("user")
 
 
 def store_token_in_cookie(
@@ -260,36 +297,38 @@ def auth_required(groups: Optional[Iterable[str]] = None, any_group: bool = Fals
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
-            # return early if the extension is disabled
-            if cognito_auth.cfg.disabled:
-                return fn(*args, **kwargs)
-
-            # Try and validate the access token stored in the cookie
-            try:
-                access_token = request.cookies.get(cognito_auth.cfg.COOKIE_NAME)
-                claims = cognito_auth.verify_access_token(
-                    token=access_token,
-                    leeway=cognito_auth.cfg.cognito_expiration_leeway,
-                )
-                valid = True
-
-                # Check for required group membership
-                if groups:
-                    if any_group:
-                        valid = any(g in claims["cognito:groups"] for g in groups)
-                    else:
-                        valid = all(g in claims["cognito:groups"] for g in groups)
-
-                    if not valid:
-                        raise CognitoGroupRequiredError
-
-            except (TokenVerifyError, KeyError):
-                valid = False
-
-            if valid:
-                return fn(*args, **kwargs)
-
-            raise AuthorisationRequiredError
+            validate_access(cognito_auth, request, groups=groups, any_group=any_group)
+            return fn(*args, **kwargs)
+            # # return early if the extension is disabled
+            # if cognito_auth.cfg.disabled:
+            #     return fn(*args, **kwargs)
+            #
+            # # Try and validate the access token stored in the cookie
+            # try:
+            #     access_token = request.cookies.get(cognito_auth.cfg.COOKIE_NAME)
+            #     claims = cognito_auth.verify_access_token(
+            #         token=access_token,
+            #         leeway=cognito_auth.cfg.cognito_expiration_leeway,
+            #     )
+            #     valid = True
+            #
+            #     # Check for required group membership
+            #     if groups:
+            #         if any_group:
+            #             valid = any(g in claims["cognito:groups"] for g in groups)
+            #         else:
+            #             valid = all(g in claims["cognito:groups"] for g in groups)
+            #
+            #         if not valid:
+            #             raise CognitoGroupRequiredError
+            #
+            # except (TokenVerifyError, KeyError):
+            #     valid = False
+            #
+            # if valid:
+            #     return fn(*args, **kwargs)
+            #
+            # raise AuthorisationRequiredError
 
         return decorator
 

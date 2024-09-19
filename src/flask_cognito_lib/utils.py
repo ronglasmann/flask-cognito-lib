@@ -3,7 +3,50 @@ from base64 import urlsafe_b64encode
 from dataclasses import dataclass
 from hashlib import sha256
 from os import urandom
-from typing import Optional
+from typing import Optional, Iterable
+
+from flask_cognito_lib.exceptions import CognitoGroupRequiredError, TokenVerifyError, AuthorisationRequiredError
+
+
+def validate_access(cognito_auth, request, groups: Optional[Iterable[str]] = None, any_group: bool = False):
+    # return early if the extension is disabled
+    if cognito_auth.cfg.disabled:
+        print(f"cognito auth is disabled")
+        valid = True
+
+    else:
+        print(f"cognito auth is enabled")
+
+        # Try and validate the access token stored in the cookie
+        try:
+            access_token = request.cookies.get(cognito_auth.cfg.COOKIE_NAME)
+            claims = cognito_auth.verify_access_token(
+                token=access_token,
+                leeway=cognito_auth.cfg.cognito_expiration_leeway,
+            )
+            print(f"access token is valid")
+            valid = True
+
+            # Check for required group membership
+            if groups:
+                print(f"checking group membership")
+                if any_group:
+                    valid = any(g in claims["cognito:groups"] for g in groups)
+                else:
+                    valid = all(g in claims["cognito:groups"] for g in groups)
+
+                if not valid:
+                    print(f"group membership check failed")
+                    raise CognitoGroupRequiredError
+
+        except (TokenVerifyError, KeyError):
+            print(f"access token is not valid")
+            valid = False
+
+    if valid:
+        pass
+    else:
+        raise AuthorisationRequiredError
 
 
 def secure_random(n_bytes: int = 32) -> str:
