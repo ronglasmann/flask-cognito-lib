@@ -49,24 +49,24 @@ def validate_and_store_tokens(
 
     # Grab the user info from the user endpoint and store in the session
     user_info = None
-    if cognito_auth.cfg.disabled:
-        print(f"cognito auth disabled")
-        user_id = os.getenv("AWS_COGNITO_DISABLED_USER_ID", None)
-        email = os.getenv("AWS_COGNITO_DISABLED_USER_EMAIL", None)
-        name = os.getenv("AWS_COGNITO_DISABLED_USER_NAME", None)
-        if user_id is None or email is None or name is None:
-            raise Exception(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
-                            f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
-        user_info = {
-            'id': user_id,
-            'email': email,
-            'name': name,
-            'is_active': 'True',
-            # 'groups': '',
-            # 'hashed_password': '',
-        }
+    # if cognito_auth.cfg.disabled:
+    #     print(f"cognito auth disabled")
+    #     user_id = os.getenv("AWS_COGNITO_DISABLED_USER_ID", None)
+    #     email = os.getenv("AWS_COGNITO_DISABLED_USER_EMAIL", None)
+    #     name = os.getenv("AWS_COGNITO_DISABLED_USER_NAME", None)
+    #     if user_id is None or email is None or name is None:
+    #         raise Exception(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
+    #                         f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
+    #     user_info = {
+    #         'id': user_id,
+    #         'email': email,
+    #         'name': name,
+    #         'is_active': 'True',
+    #         # 'groups': '',
+    #         # 'hashed_password': '',
+    #     }
 
-    elif tokens.id_token is not None:
+    if tokens.id_token is not None:
         user_info = cognito_auth.verify_id_token(
             token=tokens.id_token,
             nonce=nonce,
@@ -298,6 +298,25 @@ def auth_required(groups: Optional[Iterable[str]] = None, any_group: bool = Fals
         @wraps(fn)
         def decorator(*args, **kwargs):
             validate_access(cognito_auth, request, groups=groups, any_group=any_group)
+
+            if cognito_auth.cfg.disabled and 'user' not in session:
+                print(f"cognito auth disabled and user is not is session, adding user to session")
+                user_id = os.getenv("AWS_COGNITO_DISABLED_USER_ID", None)
+                email = os.getenv("AWS_COGNITO_DISABLED_USER_EMAIL", None)
+                name = os.getenv("AWS_COGNITO_DISABLED_USER_NAME", None)
+                if user_id is None or email is None or name is None:
+                    raise Exception(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
+                                    f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
+                user_info = {
+                    'id': user_id,
+                    'email': email,
+                    'name': name,
+                    'is_active': 'True',
+                    # 'groups': '',
+                    # 'hashed_password': '',
+                }
+                session.update({"user": user_info})
+
             return fn(*args, **kwargs)
             # # return early if the extension is disabled
             # if cognito_auth.cfg.disabled:
