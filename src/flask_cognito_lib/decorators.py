@@ -2,6 +2,7 @@ from functools import wraps
 from typing import Iterable, Optional, Union
 
 from flask import Response
+from flask import current_app as app
 from flask import redirect, request, session
 from werkzeug.local import LocalProxy
 
