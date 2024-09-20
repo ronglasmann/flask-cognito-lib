@@ -139,20 +139,6 @@ def cognito_login(fn):
     def wrapper(*args, **kwargs):
 
         if cognito_auth.cfg.disabled:
-            print(f"cognito auth disabled adding the 'auth disabled' user to session")
-            user_id = os.getenv("AWS_COGNITO_DISABLED_USER_ID", None)
-            email = os.getenv("AWS_COGNITO_DISABLED_USER_EMAIL", None)
-            name = os.getenv("AWS_COGNITO_DISABLED_USER_NAME", None)
-            if user_id is None or email is None or name is None:
-                raise Exception(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
-                                f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
-            user_info = {
-                'id': user_id,
-                'email': email,
-                'name': name,
-                'is_active': 'True',
-            }
-            session.update({"user": user_info})
             resp = fn(*args, **kwargs)
             return resp
 
@@ -195,6 +181,25 @@ def cognito_login_callback(fn):
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
+
+        if cognito_auth.cfg.disabled:
+            print(f"cognito auth disabled adding the 'auth disabled' user to session")
+            user_id = os.getenv("AWS_COGNITO_DISABLED_USER_ID", None)
+            email = os.getenv("AWS_COGNITO_DISABLED_USER_EMAIL", None)
+            name = os.getenv("AWS_COGNITO_DISABLED_USER_NAME", None)
+            if user_id is None or email is None or name is None:
+                raise Exception(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
+                                f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
+            user_info = {
+                'id': user_id,
+                'email': email,
+                'name': name,
+                'is_active': 'True',
+            }
+            session.update({"user": user_info})
+            resp = fn(*args, **kwargs)
+            return resp
+
         # Get the access token return after auth flow with Cognito
         code_verifier = session["code_verifier"]
         state = session["state"]
