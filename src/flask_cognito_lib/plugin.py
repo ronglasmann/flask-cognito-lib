@@ -111,6 +111,9 @@ class CognitoAuth:
             If the request to the TOKEN endpoint fails
             If the TOKEN endpoint returns an error code
         """
+        print(f"request_args: {request_args}")
+        print(f"expected_state: {expected_state}")
+        print(f"code_verifier: {code_verifier}")
         try:
             code = request_args["code"]
             state = request_args["state"]
