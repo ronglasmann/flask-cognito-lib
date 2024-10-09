@@ -30,8 +30,8 @@ def app():
 
     # minimum require configuration for CognitoAuth extension
     _app.config["AWS_COGNITO_USER_POOL_ID"] = "eu-west-1_c7O90SNDF"
-    _app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = "4lln66726pp3f4gi1krj0sta9h"
-    _app.config["AWS_COGNITO_USER_POOL_CLIENT_SECRET"] = "secure-client-secret"
+    _app.config["AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID"] = "4lln66726pp3f4gi1krj0sta9h"
+    _app.config["AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET"] = "secure-client-secret"
     _app.config["AWS_COGNITO_REDIRECT_URL"] = "http://localhost:5000/postlogin"
     _app.config["AWS_COGNITO_LOGOUT_URL"] = "http://localhost:5000/postlogout"
     _app.config["AWS_COGNITO_DOMAIN"] = (
@@ -244,3 +244,8 @@ def client_with_config_override(app, cfg_override):
     cl = app.test_client()
     cl.application.extensions[cfg_override.APP_EXTENSION_KEY].cfg = cfg_override
     yield cl
+
+
+@pytest.fixture
+def client_id():
+    return "4lln66726pp3f4gi1krj0sta9h"

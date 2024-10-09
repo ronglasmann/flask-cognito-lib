@@ -16,10 +16,10 @@ class CognitoService:
     ):
         self.cfg = cfg
 
-    def get_sign_in_url(self, code_challenge: str, state: str, nonce: str,
-                        scopes: Optional[List[str]] = None,
-                        client_id: Optional[str] = None,
-                        identity_provider: Optional[str] = None
+    def get_sign_in_url(self, code_challenge: str, state: str, nonce: str, client_id: str,
+                        scopes: Optional[List[str]] = None
+                        # , client_id: Optional[str] = None
+                        # , identity_provider: Optional[str] = None
 
     ) -> str:
         """Generate a sign URL against the AUTHORIZE endpoint
@@ -46,8 +46,8 @@ class CognitoService:
         """
         quoted_redirect_url = quote(self.cfg.redirect_url)
 
-        if client_id is None:
-            client_id = {self.cfg.user_pool_client_id}
+        # if client_id is None:
+        #     client_id = self.cfg.user_pool_client_id
 
         full_url = (
             f"{self.cfg.authorize_endpoint}"
@@ -60,19 +60,15 @@ class CognitoService:
             "&code_challenge_method=S256"
         )
 
-        if identity_provider is not None:
-            full_url += f"&identity_provider={identity_provider}"
+        # if identity_provider is not None:
+        #     full_url += f"&identity_provider={identity_provider}"
 
         if scopes is not None:
             full_url += f"&scope={'+'.join(scopes)}"
 
         return full_url
 
-    def exchange_code_for_token(
-        self,
-        code: str,
-        code_verifier: str,
-    ) -> CognitoTokenResponse:
+    def exchange_code_for_token(self, code: str, code_verifier: str, client_id: str) -> CognitoTokenResponse:
         """Exchange a short lived authorisation code for an access token
 
         Parameters
@@ -96,18 +92,16 @@ class CognitoService:
         """
         data = {
             "grant_type": "authorization_code",
-            "client_id": self.cfg.user_pool_client_id,
+            # "client_id": self.cfg.user_pool_client_id,
+            "client_id": client_id,
             "redirect_uri": self.cfg.redirect_url,
             "code": code,
             "code_verifier": code_verifier,
         }
 
-        return self._request_token(data)
+        return self._request_token(data, client_id)
 
-    def exhange_refresh_token(
-        self,
-        refresh_token: str,
-    ) -> CognitoTokenResponse:
+    def exhange_refresh_token(self, refresh_token: str, client_id: str) -> CognitoTokenResponse:
         """Exchange a refresh token for a new set of tokens
 
         Parameters:
@@ -129,16 +123,14 @@ class CognitoService:
         """
         data = {
             "grant_type": "refresh_token",
-            "client_id": self.cfg.user_pool_client_id,
+            # "client_id": self.cfg.user_pool_client_id,
+            "client_id": client_id,
             "refresh_token": refresh_token,
         }
 
-        return self._request_token(data)
+        return self._request_token(data, client_id)
 
-    def revoke_refresh_token(
-        self,
-        refresh_token: str,
-    ) -> None:
+    def revoke_refresh_token(self, refresh_token: str, client_id: str) -> None:
         """Revoke a refresh token
 
         Parameters:
@@ -158,9 +150,9 @@ class CognitoService:
             "token": refresh_token,
         }
 
-        self._request(url=self.cfg.revoke_endpoint, data=data)
+        self._request(url=self.cfg.revoke_endpoint, data=data, client_id=client_id)
 
-    def _request_token(self, data: Dict[str, str]) -> CognitoTokenResponse:
+    def _request_token(self, data: Dict[str, str], client_id: str) -> CognitoTokenResponse:
         """Request a token from the Cognito token endpoint
 
         Parameters
@@ -179,14 +171,14 @@ class CognitoService:
             If the request to the endpoint fails
             If the endpoint returns an error code
         """
-        response = self._request(url=self.cfg.token_endpoint, data=data)
+        response = self._request(url=self.cfg.token_endpoint, data=data, client_id=client_id)
 
         try:
             return CognitoTokenResponse(**response.json())
         except JSONDecodeError as e:
             raise CognitoError(str(e)) from e
 
-    def _request(self, url: str, data: Dict[str, str]) -> Response:
+    def _request(self, url: str, data: Dict[str, str], client_id: str) -> Response:
         """Make a request to the Cognito endpoint
 
         Parameters
@@ -211,7 +203,8 @@ class CognitoService:
         # Public Client, we assume this when the secret is blank.
         # (Blank secrets are not supported on Confidential Clients)
         if self.cfg.user_pool_client_secret:
-            auth = (self.cfg.user_pool_client_id, self.cfg.user_pool_client_secret)
+            auth = (client_id, self.cfg.user_pool_client_secret)
+            # auth = (self.cfg.user_pool_client_id, self.cfg.user_pool_client_secret)
         else:
             auth = None
 

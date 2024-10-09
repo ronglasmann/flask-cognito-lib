@@ -47,7 +47,7 @@ def test_token_endpoint(cfg):
 
 
 def test_logout_endpoint(cfg):
-    assert cfg.logout_endpoint == (
+    assert cfg.logout_endpoint(client_id="4lln66726pp3f4gi1krj0sta9h") == (
         "https://webapp-test.auth.eu-west-1.amazoncognito.com/logout"
         "?client_id=4lln66726pp3f4gi1krj0sta9h"
         "&logout_uri=http%3A//localhost%3A5000/postlogout"

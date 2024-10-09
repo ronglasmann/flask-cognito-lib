@@ -20,7 +20,8 @@ from flask_cognito_lib.utils import (
     generate_code_challenge,
     generate_code_verifier,
     secure_random,
-    validate_access
+    validate_access,
+    get_client_id
 )
 
 cognito_auth: CognitoAuth = LocalProxy(
@@ -43,6 +44,7 @@ def validate_and_store_tokens(
     # validate the JWT and get the claims
     claims = cognito_auth.verify_access_token(
         token=tokens.access_token,
+        client_id=get_client_id(cognito_auth),
         leeway=cognito_auth.cfg.cognito_expiration_leeway,
     )
     session.update({"claims": claims})
@@ -69,6 +71,7 @@ def validate_and_store_tokens(
     if tokens.id_token is not None:
         user_info = cognito_auth.verify_id_token(
             token=tokens.id_token,
+            client_id=get_client_id(cognito_auth),
             nonce=nonce,
             leeway=cognito_auth.cfg.cognito_expiration_leeway,
         )
@@ -161,16 +164,17 @@ def cognito_login(fn):
 
         session.update({"state": state})
 
-        client_id = request.args.get("client_id", None)
-        identity_provider = request.args.get("identity_provider", None)
+        # client_id = request.args.get("client_id", None)
+        # identity_provider = request.args.get("identity_provider", None)
 
         login_url = cognito_auth.cognito_service.get_sign_in_url(
             code_challenge=session["code_challenge"],
             state=session["state"],
             nonce=session["nonce"],
+            client_id=get_client_id(cognito_auth),
             scopes=cognito_auth.cfg.cognito_scopes,
-            client_id=client_id,
-            identity_provider=identity_provider
+            # client_id=client_id,
+            # identity_provider=identity_provider
         )
 
         return redirect(login_url)
@@ -270,7 +274,7 @@ def cognito_refresh_callback(fn):
 
         # Exchange refresh token for the new access token.
         tokens = cognito_auth.exchange_refresh_token(
-            refresh_token=refresh_token,
+            refresh_token=refresh_token, client_id=get_client_id(cognito_auth)
         )
 
         # Store the tokens in the session
@@ -298,7 +302,7 @@ def cognito_logout(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         # logout at cognito and remove the cookies
-        resp = redirect(cognito_auth.cfg.logout_endpoint)
+        resp = redirect(cognito_auth.cfg.logout_endpoint(get_client_id(cognito_auth)))
         resp.delete_cookie(
             key=cognito_auth.cfg.COOKIE_NAME, domain=cognito_auth.cfg.cookie_domain
         )
@@ -307,7 +311,7 @@ def cognito_logout(fn):
         if refresh_token := get_token_from_cookie(
             cognito_auth.cfg.COOKIE_NAME_REFRESH
         ):
-            cognito_auth.revoke_refresh_token(refresh_token)
+            cognito_auth.revoke_refresh_token(refresh_token, get_client_id(cognito_auth))
             resp.delete_cookie(
                 key=cognito_auth.cfg.COOKIE_NAME_REFRESH,
                 domain=cognito_auth.cfg.cookie_domain,

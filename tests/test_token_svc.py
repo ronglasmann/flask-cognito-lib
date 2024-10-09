@@ -7,13 +7,13 @@ from flask_cognito_lib.services.token_svc import TokenService
 def test_verify_no_access_token(cfg):
     serv = TokenService(cfg=cfg)
     with pytest.raises(TokenVerifyError):
-        serv.verify_access_token(None)
+        serv.verify_access_token(None, "4lln66726pp3f4gi1krj0sta9h")
 
 
 def test_verify_no_id_token(cfg):
     serv = TokenService(cfg=cfg)
     with pytest.raises(TokenVerifyError):
-        serv.verify_id_token(None)
+        serv.verify_id_token(None, "4lln66726pp3f4gi1krj0sta9h")
 
 
 def test_get_public_key(cfg):
@@ -26,9 +26,9 @@ def test_get_public_key(cfg):
         )
 
 
-def test_verify_access_token(cfg, access_token):
+def test_verify_access_token(cfg, access_token, client_id):
     serv = TokenService(cfg=cfg)
-    claims = serv.verify_access_token(access_token, leeway=1e9)
+    claims = serv.verify_access_token(access_token, client_id, leeway=1e9)
     assert claims == {
         "sub": "9048d38f-8174-49b9-8d59-3238172823d8",
         "cognito:groups": ["admin"],
@@ -47,9 +47,9 @@ def test_verify_access_token(cfg, access_token):
     }
 
 
-def test_verify_id_token(cfg, id_token):
+def test_verify_id_token(cfg, id_token, client_id):
     serv = TokenService(cfg=cfg)
-    claims = serv.verify_id_token(id_token, leeway=1e9)
+    claims = serv.verify_id_token(id_token, client_id, leeway=1e9)
     assert claims == {
         "at_hash": "WqTgBN7uFPnnJRgyd86WLA",
         "sub": "9048d38f-8174-49b9-8d59-3238172823d8",
@@ -71,10 +71,10 @@ def test_verify_id_token(cfg, id_token):
 
 
 def test_verify_access_token_invalid_client(app, cfg, access_token):
-    app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = "wrong"
+    # app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = "wrong"
     with pytest.raises(TokenVerifyError):
         serv = TokenService(cfg=cfg)
-        serv.verify_access_token(access_token, leeway=1e9)
+        serv.verify_access_token(access_token, "wrong", leeway=1e9)
 
 
 def test_encrypt_token(app, cfg, refresh_token):

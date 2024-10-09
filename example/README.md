@@ -36,8 +36,8 @@ After setting up the user pool, there are a number of values to note that are re
 | `AWS_REGION`                          | Region the user pool was created                                                     | Y                |
 | `AWS_COGNITO_DOMAIN`                  | The domain name of the user pool (from Step 2)                                       | Y                |
 | `AWS_COGNITO_USER_POOL_ID`            | The ID of the user pool                                                              | Y                |
-| `AWS_COGNITO_USER_POOL_CLIENT_ID`     | The user pool app client ID (*)                                                      | Y                |
-| `AWS_COGNITO_USER_POOL_CLIENT_SECRET` | The user pool app client secret (*)                                                  | Y                |
+| `AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID`     | The user pool app client ID (*)                                                      | Y                |
+| `AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET` | The user pool app client secret (*)                                                  | Y                |
 | `AWS_COGNITO_REDIRECT_URL`            | The full URL of the route that handles post-login flow (Step 7)                      | Y                |
 | `AWS_COGNITO_LOGOUT_URL`              | The full URL of the route that handles post-logout flow (Step 8)                     | Y                |
 | `AWS_COGNITO_COOKIE_AGE_SECONDS`      | Age of the access token cookie. Same as token expiration setting in Cognito (Step 8) | N (default 1800) |

@@ -61,21 +61,21 @@ def test_plugin_get_tokens_state_invalid(app, cfg):
         )
 
 
-def test_plugin_get_tokens(app, cfg, mocker):
+def test_plugin_get_tokens(app, cfg, mocker, client_id):
     cls = app.extensions[cfg.APP_EXTENSION_KEY]
     mocker.patch(
         "requests.post",
         return_value=mocker.Mock(json=lambda: {"access_token": "test_access_token"}),
     )
     tokens = cls.get_tokens(
-        request_args={"code": "asdf", "state": "qwer"},
+        request_args={"code": "asdf", "state": "qwer", "client_id": client_id},
         expected_state="qwer",
         code_verifier="",
     )
     assert tokens.access_token == "test_access_token"
 
 
-def test_plugin_exchange_refresh_token(app, cfg, mocker):
+def test_plugin_exchange_refresh_token(app, cfg, mocker, client_id):
     cls = app.extensions[cfg.APP_EXTENSION_KEY]
     mocker.patch(
         "requests.post",
@@ -87,16 +87,16 @@ def test_plugin_exchange_refresh_token(app, cfg, mocker):
         ),
     )
     tokens = cls.exchange_refresh_token(
-        refresh_token="test_refresh_token",
+        refresh_token="test_refresh_token", client_id=client_id
     )
     assert tokens.access_token == "new_test_access_token"
     assert tokens.refresh_token == "new_test_refresh_token"
 
 
-def test_plugin_revoke_refresh_token(app, cfg, mocker):
+def test_plugin_revoke_refresh_token(app, cfg, mocker, client_id):
     cls = app.extensions[cfg.APP_EXTENSION_KEY]
     mocker.patch(
         "requests.post",
     )
 
-    cls.revoke_refresh_token(refresh_token="test_refresh_token")
+    cls.revoke_refresh_token(refresh_token="test_refresh_token", client_id=client_id)

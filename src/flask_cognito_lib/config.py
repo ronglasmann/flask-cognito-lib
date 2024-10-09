@@ -60,15 +60,20 @@ class Config:
         """Return the Cognito user pool ID"""
         return get("AWS_COGNITO_USER_POOL_ID", required=True)
 
+    # @property
+    # def user_pool_client_id(self) -> str:
+    #     """Return the Cognito user pool client ID"""
+    #     return get("AWS_COGNITO_USER_POOL_CLIENT_ID", required=True)
+
     @property
-    def user_pool_client_id(self) -> str:
+    def user_pool_default_client_id(self) -> str:
         """Return the Cognito user pool client ID"""
-        return get("AWS_COGNITO_USER_POOL_CLIENT_ID", required=True)
+        return get("AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID", required=True)
 
     @property
     def user_pool_client_secret(self) -> str:
         """Return the Cognito user pool client secret"""
-        return get("AWS_COGNITO_USER_POOL_CLIENT_SECRET", required=False)
+        return get("AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET", required=False)
 
     @property
     def redirect_url(self) -> str:
@@ -182,12 +187,13 @@ class Config:
         """Return the Cognito AUTHORIZE endpoint URL"""
         return f"{self.domain}/oauth2/authorize"
 
-    @property
-    def logout_endpoint(self) -> str:
+    # @property
+    def logout_endpoint(self, client_id) -> str:
         """Return the Cognito LOGOUT endpoint URL"""
         return (
             f"{self.domain}/logout"
-            f"?client_id={self.user_pool_client_id}"
+            # f"?client_id={self.user_pool_client_id}"
+            f"?client_id={client_id}"
             f"&logout_uri={quote(self.logout_redirect)}"
         )
 

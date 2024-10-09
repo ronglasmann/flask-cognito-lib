@@ -78,10 +78,10 @@ class CognitoAuth:
         return getattr(g, self.cfg.CONTEXT_KEY_COGNITO_SERVICE)
 
     def get_tokens(
-        self,
-        request_args: Dict[str, str],
-        expected_state: str,
-        code_verifier: str,
+            self,
+            request_args: Dict[str, str],
+            expected_state: str,
+            code_verifier: str
     ) -> CognitoTokenResponse:
         """Exchange a short lived authorisation code for with Cognito for tokens
 
@@ -89,7 +89,7 @@ class CognitoAuth:
         ----------
         request_args : Dict[str, str]
             Request arguments returned from Cognito in the front channel
-            i.e. URL query parameters. Should contain "code" and "state"
+            i.e. URL query parameters. Should contain "client_id", "code" and "state"
         expected_state : str
             The state value that was passed to Cognito when redirecting to the
             Cognito hosted UI. It should be returned unchanged in the
@@ -117,9 +117,10 @@ class CognitoAuth:
         try:
             code = request_args["code"]
             state = request_args["state"]
+            client_id = request_args["client_id"]
         except KeyError as err:
             raise CognitoError(
-                "Access code and/or state not returned from Cognito"
+                "client_id / code / state not returned from Cognito"
             ) from err
 
         if state != expected_state:
@@ -128,12 +129,10 @@ class CognitoAuth:
         return self.cognito_service.exchange_code_for_token(
             code=code,
             code_verifier=code_verifier,
+            client_id=client_id
         )
 
-    def exchange_refresh_token(
-        self,
-        refresh_token: str,
-    ) -> CognitoTokenResponse:
+    def exchange_refresh_token(self, refresh_token: str, client_id: str) -> CognitoTokenResponse:
         """Exchange a refresh token for a new set of tokens
 
         Parameters:
@@ -153,13 +152,10 @@ class CognitoAuth:
             If the TOKEN endpoint returns an error code
         """
         return self.cognito_service.exhange_refresh_token(
-            refresh_token=refresh_token,
+            refresh_token=refresh_token, client_id=client_id
         )
 
-    def revoke_refresh_token(
-        self,
-        refresh_token: str,
-    ) -> None:
+    def revoke_refresh_token(self, refresh_token: str, client_id: str) -> None:
         """Revoke a refresh token
 
         Parameters:
@@ -176,10 +172,10 @@ class CognitoAuth:
             If the client credentials aren't valid
         """
         self.cognito_service.revoke_refresh_token(
-            refresh_token=refresh_token,
+            refresh_token=refresh_token, client_id=client_id
         )
 
-    def verify_access_token(self, token: str, leeway: float) -> Dict[str, Any]:
+    def verify_access_token(self, token: str, client_id: str, leeway: float) -> Dict[str, Any]:
         """Verify the claims & signature of an access token in JWT format from Cognito
 
         This will check the audience, issuer, expiry and validate the signature
@@ -187,7 +183,7 @@ class CognitoAuth:
 
         Parameters
         ----------
-        access_token : str
+        token : str
             The encoded JWT
         leeway : float
             A time margin in seconds for the expiration check
@@ -202,14 +198,10 @@ class CognitoAuth:
         TokenVerifyError
             If not token is passed, or any checks fail
         """
-        return self.token_service.verify_access_token(token=token, leeway=leeway)
+        return self.token_service.verify_access_token(token=token, client_id=client_id, leeway=leeway)
 
-    def verify_id_token(
-        self,
-        token: str,
-        leeway: float,
-        nonce: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    def verify_id_token(self, token: str, leeway: float, client_id: str,
+                        nonce: Optional[str] = None) -> Dict[str, Any]:
         """Verify the claims & signature of an id token in JWT format from Cognito
 
         This will check the audience, issuer, expiry and validate the signature
@@ -236,6 +228,7 @@ class CognitoAuth:
         """
         return self.token_service.verify_id_token(
             token=token,
+            client_id=client_id,
             leeway=leeway,
             nonce=nonce,
         )

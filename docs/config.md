@@ -10,8 +10,8 @@ The following key/value pairs are used for configurating the extension:
 | `AWS_REGION`                             | Region the user pool was created                                                                                |
 | `AWS_COGNITO_DOMAIN`                     | The domain name of the user pool                                                                                |
 | `AWS_COGNITO_USER_POOL_ID`               | The ID of the user pool                                                                                         |
-| `AWS_COGNITO_USER_POOL_CLIENT_ID`        | The user pool app client ID (*)                                                                                 |
-| `AWS_COGNITO_USER_POOL_CLIENT_SECRET`    | The user pool app client secret (*) [Optional for public Cognito clients]                                       |
+| `AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID`        | The user pool app client ID (*)                                                                                 |
+| `AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET`    | The user pool app client secret (*) [Optional for public Cognito clients]                                       |
 | `AWS_COGNITO_REDIRECT_URL`               | The full URL of the route that handles post-login flow                                                          |
 | `AWS_COGNITO_LOGOUT_URL`                 | The full URL of the route that handles post-logout flow                                                         |
 | `AWS_COGNITO_COOKIE_AGE_SECONDS`         | (Optional) How long to store the access token cookie. (default=1800)                                            |
@@ -46,8 +46,8 @@ class Config:
     AWS_REGION = environ["AWS_REGION"]
     AWS_COGNITO_USER_POOL_ID = environ["AWS_COGNITO_USER_POOL_ID"]
     AWS_COGNITO_DOMAIN = environ["AWS_COGNITO_DOMAIN"]
-    AWS_COGNITO_USER_POOL_CLIENT_ID = environ["AWS_COGNITO_USER_POOL_CLIENT_ID"]
-    AWS_COGNITO_USER_POOL_CLIENT_SECRET = environ["AWS_COGNITO_USER_POOL_CLIENT_SECRET"]
+    AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID = environ["AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID"]
+    AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET = environ["AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET"]
     AWS_COGNITO_REDIRECT_URL = environ["AWS_COGNITO_REDIRECT_URL"]
     AWS_COGNITO_LOGOUT_URL = environ["AWS_COGNITO_LOGOUT_URL"]
 

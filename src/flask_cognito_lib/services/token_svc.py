@@ -53,11 +53,12 @@ class TokenService:
             raise CognitoError("Error getting public keys from Cognito") from err
 
     def _jwt_validate(
-        self,
-        token: str,
-        options: Dict[str, bool],
-        leeway: float = 0,
-        required: Optional[Iterable[str]] = None,
+            self,
+            token: str,
+            options: Dict[str, bool],
+            client_id: str,
+            leeway: float = 0,
+            required: Optional[Iterable[str]] = None,
     ) -> Dict[str, Any]:
         """Validate the contents and claims of a JSON Web Token (JWT)
 
@@ -89,7 +90,8 @@ class TokenService:
                 jwt=token,
                 key=self.get_public_key(token).key,
                 algorithms=["RS256"],
-                audience=self.cfg.user_pool_client_id,
+                # audience=self.cfg.user_pool_client_id,
+                audience=client_id,
                 issuer=self.cfg.issuer,
                 leeway=leeway,
                 options=options,
@@ -102,9 +104,10 @@ class TokenService:
         return claims
 
     def verify_access_token(
-        self,
-        token: str,
-        leeway: float = 0,
+            self,
+            token: str,
+            client_id: str,
+            leeway: float = 0,
     ) -> Dict[str, Any]:
         """Verify the claims & signature of a JWT access token from Cognito
 
@@ -113,7 +116,7 @@ class TokenService:
 
         Parameters
         ----------
-        access_token : str
+        token : str
             The encoded JWT from Cognito
         leeway : float
             A time margin in seconds for the expiration check
@@ -134,6 +137,7 @@ class TokenService:
         # Verify the contents and signature of the JWT
         claims = self._jwt_validate(
             token=token,
+            client_id=client_id,
             leeway=leeway,
             options={
                 "verify_signature": True,
@@ -146,16 +150,18 @@ class TokenService:
         )
 
         # Cognito does not set an audience, but should populate client_id
-        if claims["client_id"] != self.cfg.user_pool_client_id:
+        # if claims["client_id"] != self.cfg.user_pool_client_id:
+        if claims["client_id"] != client_id:
             raise TokenVerifyError("Token was not issued for this client id")
 
         return claims
 
     def verify_id_token(
-        self,
-        token: str,
-        leeway: float = 0,
-        nonce: Optional[str] = None,
+            self,
+            token: str,
+            client_id: str,
+            leeway: float = 0,
+            nonce: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Verify the claims & signature of an id token in JWT format from Cognito
 
@@ -187,6 +193,7 @@ class TokenService:
         # Verify the contents and signature of the JWT
         claims = self._jwt_validate(
             token=token,
+            client_id=client_id,
             leeway=leeway,
             options={
                 "verify_signature": True,

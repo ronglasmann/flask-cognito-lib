@@ -24,6 +24,7 @@ def test_sign_in_url(cfg):
         state="1234",
         nonce="6789",
         scopes=["openid", "profile"],
+        client_id="4lln66726pp3f4gi1krj0sta9h"
     )
     assert res == (
         "https://webapp-test.auth.eu-west-1.amazoncognito.com/oauth2/authorize"
@@ -46,7 +47,7 @@ def test_exchange_code_for_token_requests_error(cfg, mocker):
 
     with pytest.raises(CognitoError):
         cognito = CognitoService(cfg)
-        cognito.exchange_code_for_token(code="", code_verifier="")
+        cognito.exchange_code_for_token(code="", code_verifier="", client_id="4lln66726pp3f4gi1krj0sta9h")
 
 
 def test_exchange_code_for_token(cfg, mocker):
@@ -56,7 +57,8 @@ def test_exchange_code_for_token(cfg, mocker):
     )
 
     cognito = CognitoService(cfg)
-    token = cognito.exchange_code_for_token(code="test_code", code_verifier="asdf")
+    token = cognito.exchange_code_for_token(code="test_code", code_verifier="asdf",
+                                            client_id="4lln66726pp3f4gi1krj0sta9h")
     assert token.access_token == "test_access_token"
 
 
@@ -66,10 +68,11 @@ def test_exchange_code_for_token_with_public_client(app, cfg, mocker):
         return_value=mocker.Mock(json=lambda: {"access_token": "test_access_token"}),
     )
 
-    app.config.pop("AWS_COGNITO_USER_POOL_CLIENT_SECRET")
+    app.config.pop("AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET")
 
     cognito = CognitoService(cfg)
-    token = cognito.exchange_code_for_token(code="test_code", code_verifier="asdf")
+    token = cognito.exchange_code_for_token(code="test_code", code_verifier="asdf",
+                                            client_id="4lln66726pp3f4gi1krj0sta9h")
     assert token.access_token == "test_access_token"
 
 
@@ -89,7 +92,7 @@ def test_exchange_code_for_token_error(cfg, mocker):
         match=f"CognitoError: {error_code}",
     ):
         cognito = CognitoService(cfg)
-        cognito.exchange_code_for_token(code="", code_verifier="")
+        cognito.exchange_code_for_token(code="", code_verifier="", client_id="4lln66726pp3f4gi1krj0sta9h")
 
 
 def test_exchange_code_for_token_error_description(cfg, mocker):
@@ -110,7 +113,7 @@ def test_exchange_code_for_token_error_description(cfg, mocker):
         match=f"CognitoError: {error_code} - {error_description}",
     ):
         cognito = CognitoService(cfg)
-        cognito.exchange_code_for_token(code="", code_verifier="")
+        cognito.exchange_code_for_token(code="", code_verifier="", client_id="4lln66726pp3f4gi1krj0sta9h")
 
 
 def test_exchange_code_for_token_error_json(cfg, mocker):
@@ -126,7 +129,7 @@ def test_exchange_code_for_token_error_json(cfg, mocker):
         match=re.escape("Expecting value: line 1 column 1 (char 0)"),
     ):
         cognito = CognitoService(cfg)
-        cognito.exchange_code_for_token(code="", code_verifier="")
+        cognito.exchange_code_for_token(code="", code_verifier="", client_id="4lln66726pp3f4gi1krj0sta9h")
 
 
 def test_refresh_token(cfg, mocker):
@@ -141,7 +144,8 @@ def test_refresh_token(cfg, mocker):
     )
 
     cognito = CognitoService(cfg)
-    token = cognito.exhange_refresh_token(refresh_token="test_refresh_token")
+    token = cognito.exhange_refresh_token(refresh_token="test_refresh_token",
+                                          client_id="4lln66726pp3f4gi1krj0sta9h")
 
     assert token.access_token == "new_test_access_token"
     assert token.refresh_token == "new_test_refresh_token"
@@ -153,7 +157,8 @@ def test_revoke_refresh_token(cfg, mocker):
     )
 
     cognito = CognitoService(cfg)
-    cognito.revoke_refresh_token(refresh_token="test_refresh_token")
+    cognito.revoke_refresh_token(refresh_token="test_refresh_token",
+                                 client_id="4lln66726pp3f4gi1krj0sta9h")
 
 
 def test_revoke_refresh_token_error_json(cfg, mocker):
@@ -166,4 +171,5 @@ def test_revoke_refresh_token_error_json(cfg, mocker):
 
     # Non-JSON response should not raise an exception
     cognito = CognitoService(cfg)
-    cognito.revoke_refresh_token(refresh_token="test_refresh_token")
+    cognito.revoke_refresh_token(refresh_token="test_refresh_token",
+                                 client_id="4lln66726pp3f4gi1krj0sta9h")

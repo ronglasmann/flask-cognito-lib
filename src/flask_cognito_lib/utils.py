@@ -4,11 +4,26 @@ from dataclasses import dataclass
 from hashlib import sha256
 from os import urandom
 from typing import Optional, Iterable
+from flask import current_app as app
+from flask import request
+from werkzeug.local import LocalProxy
 
+from flask_cognito_lib.config import Config
 from flask_cognito_lib.exceptions import CognitoGroupRequiredError, TokenVerifyError, AuthorisationRequiredError
 
 
-def validate_access(cognito_auth, request, groups: Optional[Iterable[str]] = None, any_group: bool = False):
+def get_client_id(cognito_auth=None):
+    if cognito_auth is None:
+        cognito_auth = LocalProxy(
+            lambda: app.extensions[Config.APP_EXTENSION_KEY]
+        )
+    client_id = request.args.get("client_id", None)
+    if client_id is None:
+        client_id = cognito_auth.cfg.user_pool_default_client_id
+    return client_id
+
+
+def validate_access(cognito_auth, req, groups: Optional[Iterable[str]] = None, any_group: bool = False):
     # return early if the extension is disabled
     if cognito_auth.cfg.disabled:
         print(f"cognito auth is disabled")
@@ -19,9 +34,11 @@ def validate_access(cognito_auth, request, groups: Optional[Iterable[str]] = Non
 
         # Try and validate the access token stored in the cookie
         try:
-            access_token = request.cookies.get(cognito_auth.cfg.COOKIE_NAME)
+            client_id = get_client_id(cognito_auth)
+            access_token = req.cookies.get(cognito_auth.cfg.COOKIE_NAME)
             claims = cognito_auth.verify_access_token(
                 token=access_token,
+                client_id=client_id,
                 leeway=cognito_auth.cfg.cognito_expiration_leeway,
             )
             print(f"access token is valid")

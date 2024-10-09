@@ -290,22 +290,22 @@ def test_cognito_refresh_callback(
         assert "user_info" in session
 
 
-def test_cognito_logout(client, cfg):
+def test_cognito_logout(client, cfg, client_id):
     # should 302 redirect to cognito
     response = client.get("/logout")
     assert response.status_code == 302
-    assert response.headers["location"].startswith(cfg.logout_endpoint)
+    assert response.headers["location"].startswith(cfg.logout_endpoint(client_id))
 
 
-def test_cognito_logout_override(client_with_config_override, cfg_override):
+def test_cognito_logout_override(client_with_config_override, cfg_override, client_id):
     # should 302 redirect to cognito, logout endpoint should be the overridden
     # from the custom Config object
     response = client_with_config_override.get("/logout")
     assert response.status_code == 302
-    assert response.headers["location"].startswith(cfg_override.logout_endpoint)
+    assert response.headers["location"].startswith(cfg_override.logout_endpoint(client_id))
 
 
-def test_cognito_logout_with_refresh_token(client_with_cookie_refresh, cfg, mocker):
+def test_cognito_logout_with_refresh_token(client_with_cookie_refresh, cfg, mocker, client_id):
     # Mock the refresh token revocation
     mocker.patch(
         "flask_cognito_lib.decorators.cognito_auth.revoke_refresh_token",
@@ -314,7 +314,7 @@ def test_cognito_logout_with_refresh_token(client_with_cookie_refresh, cfg, mock
     # should 302 redirect to cognito
     response = client_with_cookie_refresh.get("/logout")
     assert response.status_code == 302
-    assert response.headers["location"].startswith(cfg.logout_endpoint)
+    assert response.headers["location"].startswith(cfg.logout_endpoint(client_id))
 
     # check that both access and refresh token is set in the cookie
     cookies_set = response.headers.getlist("Set-Cookie")
