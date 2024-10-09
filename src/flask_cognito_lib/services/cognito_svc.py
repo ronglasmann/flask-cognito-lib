@@ -16,12 +16,11 @@ class CognitoService:
     ):
         self.cfg = cfg
 
-    def get_sign_in_url(
-        self,
-        code_challenge: str,
-        state: str,
-        nonce: str,
-        scopes: Optional[List[str]] = None,
+    def get_sign_in_url(self, code_challenge: str, state: str, nonce: str,
+                        scopes: Optional[List[str]] = None,
+                        client_id: Optional[str] = None,
+                        identity_provider: Optional[str] = None
+
     ) -> str:
         """Generate a sign URL against the AUTHORIZE endpoint
 
@@ -47,16 +46,22 @@ class CognitoService:
         """
         quoted_redirect_url = quote(self.cfg.redirect_url)
 
+        if client_id is None:
+            client_id = {self.cfg.user_pool_client_id}
+
         full_url = (
             f"{self.cfg.authorize_endpoint}"
             f"?response_type=code"
-            f"&client_id={self.cfg.user_pool_client_id}"
+            f"&client_id={client_id}"
             f"&redirect_uri={quoted_redirect_url}"
             f"&state={state}"
             f"&nonce={nonce}"
             f"&code_challenge={code_challenge}"
             "&code_challenge_method=S256"
         )
+
+        if identity_provider is not None:
+            full_url += f"&identity_provider={identity_provider}"
 
         if scopes is not None:
             full_url += f"&scope={'+'.join(scopes)}"

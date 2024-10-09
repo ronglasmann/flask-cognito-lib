@@ -161,11 +161,16 @@ def cognito_login(fn):
 
         session.update({"state": state})
 
+        client_id = request.args.get("client_id", None)
+        identity_provider = request.args.get("identity_provider", None)
+
         login_url = cognito_auth.cognito_service.get_sign_in_url(
             code_challenge=session["code_challenge"],
             state=session["state"],
             nonce=session["nonce"],
             scopes=cognito_auth.cfg.cognito_scopes,
+            client_id=client_id,
+            identity_provider=identity_provider
         )
 
         return redirect(login_url)
