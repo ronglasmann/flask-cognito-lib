@@ -133,6 +133,8 @@ class CognitoAuth:
         if "code" not in request_args:
             raise CognitoError("code not returned from Cognito")
 
+        code = request_args["code"]
+
         if "state" in request_args:
             state = request_args["state"]
             if state != expected_state:

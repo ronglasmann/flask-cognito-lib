@@ -35,11 +35,11 @@ def test_plugin_lazy_init_with_config_override(cfg_override):
     )
 
 
-def test_plugin_get_tokens_parameters_state(app, cfg):
+def test_plugin_get_tokens_parameters_state(app, cfg, client_id):
     cls = app.extensions[cfg.APP_EXTENSION_KEY]
     with pytest.raises(CognitoError):
         cls.get_tokens(
-            request_args={"code": "asdf"}, expected_state="", code_verifier="", cognito_auth=cls
+            request_args={"code": "asdf", "client_id": client_id}, expected_state="", code_verifier="", cognito_auth=cls
         )
 
 
