@@ -44,7 +44,7 @@ def validate_and_store_tokens(
     # validate the JWT and get the claims
     claims = cognito_auth.verify_access_token(
         token=tokens.access_token,
-        client_id=get_client_id(cognito_auth),
+        client_id=get_client_id(cognito_auth, request),
         leeway=cognito_auth.cfg.cognito_expiration_leeway,
     )
     session.update({"claims": claims})
@@ -71,7 +71,7 @@ def validate_and_store_tokens(
     if tokens.id_token is not None:
         user_info = cognito_auth.verify_id_token(
             token=tokens.id_token,
-            client_id=get_client_id(cognito_auth),
+            client_id=get_client_id(cognito_auth, request),
             nonce=nonce,
             leeway=cognito_auth.cfg.cognito_expiration_leeway,
         )
@@ -171,7 +171,7 @@ def cognito_login(fn):
             code_challenge=session["code_challenge"],
             state=session["state"],
             nonce=session["nonce"],
-            client_id=get_client_id(cognito_auth),
+            client_id=get_client_id(cognito_auth, request),
             scopes=cognito_auth.cfg.cognito_scopes,
             # client_id=client_id,
             # identity_provider=identity_provider
@@ -274,7 +274,7 @@ def cognito_refresh_callback(fn):
 
         # Exchange refresh token for the new access token.
         tokens = cognito_auth.exchange_refresh_token(
-            refresh_token=refresh_token, client_id=get_client_id(cognito_auth)
+            refresh_token=refresh_token, client_id=get_client_id(cognito_auth, request)
         )
 
         # Store the tokens in the session
@@ -302,7 +302,7 @@ def cognito_logout(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         # logout at cognito and remove the cookies
-        resp = redirect(cognito_auth.cfg.logout_endpoint(get_client_id(cognito_auth)))
+        resp = redirect(cognito_auth.cfg.logout_endpoint(get_client_id(cognito_auth, request)))
         resp.delete_cookie(
             key=cognito_auth.cfg.COOKIE_NAME, domain=cognito_auth.cfg.cookie_domain
         )
@@ -311,7 +311,7 @@ def cognito_logout(fn):
         if refresh_token := get_token_from_cookie(
             cognito_auth.cfg.COOKIE_NAME_REFRESH
         ):
-            cognito_auth.revoke_refresh_token(refresh_token, get_client_id(cognito_auth))
+            cognito_auth.revoke_refresh_token(refresh_token, get_client_id(cognito_auth, request))
             resp.delete_cookie(
                 key=cognito_auth.cfg.COOKIE_NAME_REFRESH,
                 domain=cognito_auth.cfg.cookie_domain,

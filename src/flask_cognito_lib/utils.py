@@ -4,20 +4,12 @@ from dataclasses import dataclass
 from hashlib import sha256
 from os import urandom
 from typing import Optional, Iterable
-from flask import current_app as app
-from flask import request
-from werkzeug.local import LocalProxy
 
-from flask_cognito_lib.config import Config
 from flask_cognito_lib.exceptions import CognitoGroupRequiredError, TokenVerifyError, AuthorisationRequiredError
 
 
-def get_client_id(cognito_auth=None):
-    if cognito_auth is None:
-        cognito_auth = LocalProxy(
-            lambda: app.extensions[Config.APP_EXTENSION_KEY]
-        )
-    client_id = request.args.get("client_id", None)
+def get_client_id(cognito_auth, req):
+    client_id = req.args.get("client_id", None)
     if client_id is None:
         client_id = cognito_auth.cfg.user_pool_default_client_id
     return client_id
@@ -34,7 +26,7 @@ def validate_access(cognito_auth, req, groups: Optional[Iterable[str]] = None, a
 
         # Try and validate the access token stored in the cookie
         try:
-            client_id = get_client_id(cognito_auth)
+            client_id = get_client_id(cognito_auth, req)
             access_token = req.cookies.get(cognito_auth.cfg.COOKIE_NAME)
             claims = cognito_auth.verify_access_token(
                 token=access_token,
