@@ -29,7 +29,7 @@ def test_issuer(cfg):
 
 
 def test_client_secret(cfg):
-    assert cfg.user_pool_client_secret == "secure-client-secret"
+    assert cfg.user_pool_default_client_secret == "secure-client-secret"
 
 
 def test_logout_url(cfg):

@@ -202,8 +202,8 @@ class CognitoService:
         # The Authorization header must not be present when using a
         # Public Client, we assume this when the secret is blank.
         # (Blank secrets are not supported on Confidential Clients)
-        if self.cfg.user_pool_client_secret:
-            auth = (client_id, self.cfg.user_pool_client_secret)
+        if client_id == self.cfg.user_pool_default_client_id:
+            auth = (client_id, self.cfg.user_pool_default_client_secret)
             # auth = (self.cfg.user_pool_client_id, self.cfg.user_pool_client_secret)
         else:
             auth = None

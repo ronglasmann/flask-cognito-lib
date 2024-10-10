@@ -71,7 +71,7 @@ class Config:
         return get("AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID", required=True)
 
     @property
-    def user_pool_client_secret(self) -> str:
+    def user_pool_default_client_secret(self) -> str:
         """Return the Cognito user pool client secret"""
         return get("AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET", required=False)
 
