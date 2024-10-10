@@ -214,6 +214,10 @@ def cognito_login_callback(fn):
         state = session["state"]
         nonce = session["nonce"]
 
+        print(f"code_verifier: {code_verifier}")
+        print(f"state: {state}")
+        print(f"nonce: {nonce}")
+
         # exchange the code for an access token
         # also confirms the returned state is correct
         tokens = cognito_auth.get_tokens(
