@@ -121,14 +121,14 @@ class CognitoAuth:
         print(f"request_args: {request_args}")
         print(f"expected_state: {expected_state}")
         print(f"code_verifier: {code_verifier}")
-        try:
-            code = request_args["code"]
-            state = request_args["state"]
-            client_id = request_args["client_id"]
-        except KeyError as err:
-            raise CognitoError(
-                "client_id / code / state not returned from Cognito"
-            ) from err
+        # try:
+        #     code = request_args["code"]
+        #     state = request_args["state"]
+        #     client_id = request_args["client_id"]
+        # except KeyError as err:
+        #     raise CognitoError(
+        #         "client_id / code / state not returned from Cognito"
+        #     ) from err
 
         if "code" not in request_args:
             raise CognitoError("code not returned from Cognito")
