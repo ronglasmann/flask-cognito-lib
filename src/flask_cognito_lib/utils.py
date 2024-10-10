@@ -8,9 +8,11 @@ from typing import Optional, Iterable
 from flask_cognito_lib.exceptions import CognitoGroupRequiredError, TokenVerifyError, AuthorisationRequiredError
 
 
-def get_client_id(cognito_auth, req):
-    print(f"req.args: {req.args}")
-    client_id = req.args.get("client_id", None)
+def get_client_id(cognito_auth, req=None, req_args=None):
+    if req_args is None:
+        req_args = req.args
+    print(f"req_args: {req_args}")
+    client_id = req_args.get("client_id", None)
     print(f"client_id: {client_id}")
     if client_id is None:
         client_id = cognito_auth.cfg.user_pool_default_client_id

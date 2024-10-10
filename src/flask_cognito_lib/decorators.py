@@ -221,9 +221,10 @@ def cognito_login_callback(fn):
         # exchange the code for an access token
         # also confirms the returned state is correct
         tokens = cognito_auth.get_tokens(
-            request_args=request.args,
+            req=request,
             expected_state=state,
             code_verifier=code_verifier,
+            cognito_auth=cognito_auth
         )
 
         # Store the tokens in the session

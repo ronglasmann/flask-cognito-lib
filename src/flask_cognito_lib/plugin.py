@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, Optional
 
+import flask
 from flask import Flask, g
 
 from flask_cognito_lib.config import Config
@@ -7,7 +8,7 @@ from flask_cognito_lib.exceptions import CognitoError
 from flask_cognito_lib.services import cognito_service_factory, token_service_factory
 from flask_cognito_lib.services.cognito_svc import CognitoService
 from flask_cognito_lib.services.token_svc import TokenService
-from flask_cognito_lib.utils import CognitoTokenResponse
+from flask_cognito_lib.utils import CognitoTokenResponse, get_client_id
 
 
 class CognitoAuth:
@@ -79,9 +80,12 @@ class CognitoAuth:
 
     def get_tokens(
             self,
-            request_args: Dict[str, str],
             expected_state: str,
-            code_verifier: str
+            code_verifier: str,
+            cognito_auth,
+            req: flask.request = None,
+            request_args: Dict[str, str] = None
+
     ) -> CognitoTokenResponse:
         """Exchange a short lived authorisation code for with Cognito for tokens
 
@@ -111,6 +115,9 @@ class CognitoAuth:
             If the request to the TOKEN endpoint fails
             If the TOKEN endpoint returns an error code
         """
+
+        if request_args is None:
+            request_args = req.args
         print(f"request_args: {request_args}")
         print(f"expected_state: {expected_state}")
         print(f"code_verifier: {code_verifier}")
@@ -123,8 +130,15 @@ class CognitoAuth:
                 "client_id / code / state not returned from Cognito"
             ) from err
 
-        if state != expected_state:
-            raise CognitoError("State for CSRF is not correct")
+        if "code" not in request_args:
+            raise CognitoError("code not returned from Cognito")
+
+        if "state" in request_args:
+            state = request_args["state"]
+            if state != expected_state:
+                raise CognitoError("State for CSRF is not correct")
+
+        client_id = get_client_id(cognito_auth, req, request_args)
 
         return self.cognito_service.exchange_code_for_token(
             code=code,
