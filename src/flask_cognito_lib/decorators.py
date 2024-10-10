@@ -214,6 +214,7 @@ def cognito_login_callback(fn):
         state = session["state"]
         nonce = session["nonce"]
 
+        print(f"request.args: {request.args}")
         print(f"code_verifier: {code_verifier}")
         print(f"state: {state}")
         print(f"nonce: {nonce}")
