@@ -19,7 +19,7 @@ class CognitoService:
     def get_sign_in_url(self, code_challenge: str, state: str, nonce: str, client_id: str,
                         scopes: Optional[List[str]] = None
                         # , client_id: Optional[str] = None
-                        # , identity_provider: Optional[str] = None
+                        , identity_provider: Optional[str] = None
 
     ) -> str:
         """Generate a sign URL against the AUTHORIZE endpoint
@@ -44,6 +44,9 @@ class CognitoService:
         str
             A front channel login URL for the AWS Cognito AUTHORIZE endpoint
         """
+        print(f"get_sign_in_url(code_challenge={code_challenge}, state={state}, nonce={nonce}, "
+              f"client_id={client_id}, scopes={scopes}, identity_provider={identity_provider}")
+
         quoted_redirect_url = quote(self.cfg.redirect_url)
 
         # if client_id is None:
@@ -60,12 +63,13 @@ class CognitoService:
             "&code_challenge_method=S256"
         )
 
-        # if identity_provider is not None:
-        #     full_url += f"&identity_provider={identity_provider}"
+        if identity_provider is not None:
+            full_url += f"&identity_provider={identity_provider}"
 
         if scopes is not None:
             full_url += f"&scope={'+'.join(scopes)}"
 
+        print(f"full_url: {full_url}")
         return full_url
 
     def exchange_code_for_token(self, code: str, code_verifier: str, client_id: str) -> CognitoTokenResponse:
