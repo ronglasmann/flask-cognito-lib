@@ -329,6 +329,8 @@ def cognito_logout(fn):
                 domain=cognito_auth.cfg.cookie_domain,
             )
 
+        remove_from_session(session.keys())
+
         # Cognito will redirect to the sign-out URL (if set) or else use
         # the callback URL
         return resp
