@@ -8,7 +8,7 @@ from flask_cognito_lib.exceptions import CognitoError
 from flask_cognito_lib.services import cognito_service_factory, token_service_factory
 from flask_cognito_lib.services.cognito_svc import CognitoService
 from flask_cognito_lib.services.token_svc import TokenService
-from flask_cognito_lib.utils import CognitoTokenResponse, get_client_id
+from flask_cognito_lib.utils import CognitoTokenResponse, get_client_id, get_session_args
 
 
 class CognitoAuth:
@@ -82,9 +82,10 @@ class CognitoAuth:
             self,
             expected_state: str,
             code_verifier: str,
-            cognito_auth,
             req: flask.request = None,
-            request_args: Dict[str, str] = None
+            request_args: Dict[str, str] = None,
+            sess: flask.request = None,
+            session_args: Dict[str, str] = None
 
     ) -> CognitoTokenResponse:
         """Exchange a short lived authorisation code for with Cognito for tokens
@@ -120,7 +121,10 @@ class CognitoAuth:
 
         if request_args is None:
             request_args = req.args
+        if session_args is None:
+            session_args = get_session_args(sess)
         print(f"request_args: {request_args}")
+        print(f"request_args: {session_args}")
         print(f"expected_state: {expected_state}")
         print(f"code_verifier: {code_verifier}")
         # try:
@@ -142,7 +146,7 @@ class CognitoAuth:
             if state != expected_state:
                 raise CognitoError("State for CSRF is not correct")
 
-        client_id = get_client_id(cognito_auth, req, request_args)
+        client_id = get_client_id(self, req_args=request_args, sess_args=session_args)
 
         return self.cognito_service.exchange_code_for_token(
             code=code,

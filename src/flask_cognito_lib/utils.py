@@ -8,11 +8,21 @@ from typing import Optional, Iterable
 from flask_cognito_lib.exceptions import CognitoGroupRequiredError, TokenVerifyError, AuthorisationRequiredError
 
 
-def get_client_id(cognito_auth, req=None, req_args=None):
+def get_session_args(sess):
+    session_args = {}
+    for k in sess.keys():
+        session_args[k] = sess[k]
+    return session_args
+
+
+def get_client_id(cognito_auth, req=None, req_args=None, sess=None, sess_args=None):
     print(f"get_client_id(...)")
     if req_args is None:
         req_args = req.args
     print(f"req_args: {req_args}")
+    if sess_args is None:
+        sess_args = get_session_args(sess)
+    print(f"sess_args: {sess_args}")
     client_id = req_args.get("client_id", None)
     if client_id is None:
         client_id = cognito_auth.cfg.user_pool_default_client_id
@@ -20,7 +30,7 @@ def get_client_id(cognito_auth, req=None, req_args=None):
     return client_id
 
 
-def validate_access(cognito_auth, req, groups: Optional[Iterable[str]] = None, any_group: bool = False):
+def validate_access(cognito_auth, req, sess, groups: Optional[Iterable[str]] = None, any_group: bool = False):
     # return early if the extension is disabled
     if cognito_auth.cfg.disabled:
         print(f"cognito auth is disabled")
@@ -31,7 +41,7 @@ def validate_access(cognito_auth, req, groups: Optional[Iterable[str]] = None, a
 
         # Try and validate the access token stored in the cookie
         try:
-            client_id = get_client_id(cognito_auth, req)
+            client_id = get_client_id(cognito_auth, req=req, sess=sess)
             access_token = req.cookies.get(cognito_auth.cfg.COOKIE_NAME)
             claims = cognito_auth.verify_access_token(
                 token=access_token,

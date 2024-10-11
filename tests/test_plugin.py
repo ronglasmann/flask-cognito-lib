@@ -39,7 +39,10 @@ def test_plugin_get_tokens_parameters_state(app, cfg, client_id):
     cls = app.extensions[cfg.APP_EXTENSION_KEY]
     with pytest.raises(CognitoError):
         cls.get_tokens(
-            request_args={"code": "asdf", "client_id": client_id}, expected_state="", code_verifier="", cognito_auth=cls
+            request_args={"code": "asdf", "client_id": client_id},
+            session_args={},
+            expected_state="",
+            code_verifier=""
         )
 
 
@@ -47,7 +50,10 @@ def test_plugin_get_tokens_parameters_code(app, cfg):
     cls = app.extensions[cfg.APP_EXTENSION_KEY]
     with pytest.raises(CognitoError):
         cls.get_tokens(
-            request_args={"state": "asdf"}, expected_state="", code_verifier="", cognito_auth=cls
+            request_args={"state": "asdf"},
+            session_args={},
+            expected_state="",
+            code_verifier=""
         )
 
 
@@ -56,9 +62,9 @@ def test_plugin_get_tokens_state_invalid(app, cfg):
     with pytest.raises(CognitoError):
         cls.get_tokens(
             request_args={"code": "asdf", "state": "qwer"},
+            session_args={},
             expected_state="1234",
-            code_verifier="",
-            cognito_auth=cls
+            code_verifier=""
         )
 
 
@@ -70,9 +76,9 @@ def test_plugin_get_tokens(app, cfg, mocker, client_id):
     )
     tokens = cls.get_tokens(
         request_args={"code": "asdf", "state": "qwer", "client_id": client_id},
+        session_args={},
         expected_state="qwer",
-        code_verifier="",
-        cognito_auth=cls
+        code_verifier=""
     )
     assert tokens.access_token == "test_access_token"
 
