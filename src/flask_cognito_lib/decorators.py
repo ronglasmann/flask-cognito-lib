@@ -138,6 +138,8 @@ def get_token_from_cookie(cookie_name: str) -> Union[str, None]:
 def cognito_login(fn):
     """A decorator that redirects to the Cognito hosted UI"""
 
+    print(f"cognito_login({fn})")
+
     @wraps(fn)
     def wrapper(*args, **kwargs):
 
@@ -187,6 +189,8 @@ def cognito_login_callback(fn):
     A decorator to wrap the redirect after a user has logged in with Cognito.
     Stores the Cognito JWT in a http only cookie.
     """
+
+    print(f"cognito_login_callback({fn})")
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -268,6 +272,8 @@ def cognito_login_callback(fn):
 def cognito_refresh_callback(fn):
     """A decorator that handles token refresh with Cognito"""
 
+    print(f"cognito_refresh_callback({fn})")
+
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if not cognito_auth.cfg.refresh_flow_enabled:
@@ -305,6 +311,8 @@ def cognito_refresh_callback(fn):
 def cognito_logout(fn):
     """A decorator that handles logging out with Cognito"""
 
+    print(f"cognito_logout({fn})")
+
     @wraps(fn)
     def wrapper(*args, **kwargs):
         # logout at cognito and remove the cookies
@@ -332,6 +340,8 @@ def cognito_logout(fn):
 
 def auth_required(groups: Optional[Iterable[str]] = None, any_group: bool = False):
     """A decorator to protect a route with AWS Cognito"""
+
+    print(f"auth_required({groups}, {any_group})")
 
     def wrapper(fn):
         @wraps(fn)
