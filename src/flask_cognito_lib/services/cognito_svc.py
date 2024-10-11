@@ -90,6 +90,7 @@ class CognitoService:
             If the request to the endpoint fails
             If the endpoint returns an error code
         """
+        print(f"exchange_code_for_token(code={code}, code_verifier={code_verifier}, client_id={client_id})")
         data = {
             "grant_type": "authorization_code",
             # "client_id": self.cfg.user_pool_client_id,
@@ -171,6 +172,7 @@ class CognitoService:
             If the request to the endpoint fails
             If the endpoint returns an error code
         """
+        print(f"_request_token(data={data}, client_id={client_id})")
         response = self._request(url=self.cfg.token_endpoint, data=data, client_id=client_id)
 
         try:
@@ -199,6 +201,7 @@ class CognitoService:
             If the request to the endpoint fails
             If the endpoint returns an error code
         """
+        print(f"_request(url={url}, data={data}, client_id={client_id})")
         # The Authorization header must not be present when using a
         # Public Client, we assume this when the secret is blank.
         # (Blank secrets are not supported on Confidential Clients)
@@ -231,4 +234,5 @@ class CognitoService:
             # Some responses from Cognito are not JSON,so we can ignore this here.
             pass
 
+        print(f"response: {response}")
         return response

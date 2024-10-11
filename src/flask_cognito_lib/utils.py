@@ -9,6 +9,7 @@ from flask_cognito_lib.exceptions import CognitoGroupRequiredError, TokenVerifyE
 
 
 def get_client_id(cognito_auth, req=None, req_args=None):
+    print(f"get_client_id(...)")
     if req_args is None:
         req_args = req.args
     print(f"req_args: {req_args}")

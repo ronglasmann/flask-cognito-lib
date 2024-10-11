@@ -116,6 +116,8 @@ class CognitoAuth:
             If the TOKEN endpoint returns an error code
         """
 
+        print(f"get_tokens(...)")
+
         if request_args is None:
             request_args = req.args
         print(f"request_args: {request_args}")
