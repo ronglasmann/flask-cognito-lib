@@ -138,10 +138,9 @@ def get_token_from_cookie(cookie_name: str) -> Union[str, None]:
 def cognito_login(fn):
     """A decorator that redirects to the Cognito hosted UI"""
 
-    print(f"cognito_login({fn})")
-
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        print(f"cognito_login({fn}) -> wrapper({args}, {kwargs})")
 
         if cognito_auth.cfg.disabled:
             resp = fn(*args, **kwargs)
@@ -190,10 +189,9 @@ def cognito_login_callback(fn):
     Stores the Cognito JWT in a http only cookie.
     """
 
-    print(f"cognito_login_callback({fn})")
-
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        print(f"cognito_login_callback({fn}) -> wrapper({args}, {kwargs})")
 
         if cognito_auth.cfg.disabled:
             print(f"cognito auth disabled adding the 'auth disabled' user to session")
@@ -272,10 +270,9 @@ def cognito_login_callback(fn):
 def cognito_refresh_callback(fn):
     """A decorator that handles token refresh with Cognito"""
 
-    print(f"cognito_refresh_callback({fn})")
-
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        print(f"cognito_refresh_callback({fn}) -> wrapper({args}, {kwargs})")
         if not cognito_auth.cfg.refresh_flow_enabled:
             raise CognitoError("Refresh flow is not enabled")
 
@@ -311,10 +308,10 @@ def cognito_refresh_callback(fn):
 def cognito_logout(fn):
     """A decorator that handles logging out with Cognito"""
 
-    print(f"cognito_logout({fn})")
-
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        print(f"cognito_logout({fn}) -> wrapper({args}, {kwargs})")
+
         # logout at cognito and remove the cookies
         resp = redirect(cognito_auth.cfg.logout_endpoint(get_client_id(cognito_auth, request)))
         resp.delete_cookie(
@@ -341,11 +338,11 @@ def cognito_logout(fn):
 def auth_required(groups: Optional[Iterable[str]] = None, any_group: bool = False):
     """A decorator to protect a route with AWS Cognito"""
 
-    print(f"auth_required({groups}, {any_group})")
-
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
+            print(f"auth_required({groups}, {any_group}) -> wrapper({fn}) -> decorator({args}, {kwargs})")
+
             validate_access(cognito_auth, request, groups=groups, any_group=any_group)
 
             return fn(*args, **kwargs)
