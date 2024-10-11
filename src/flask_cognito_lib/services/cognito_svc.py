@@ -210,14 +210,14 @@ class CognitoService:
         # Public Client, we assume this when the secret is blank.
         # (Blank secrets are not supported on Confidential Clients)
         if client_id == self.cfg.user_pool_default_client_id:
+            print("default app client")
             auth = (client_id, self.cfg.user_pool_default_client_secret)
             # auth = (self.cfg.user_pool_client_id, self.cfg.user_pool_client_secret)
+        elif client_id == self.cfg.okta_idp_client_id:
+            print("okta app client")
+            auth = (client_id, self.cfg.okta_idp_client_secret)
         else:
-            client_secret = self.cfg.get_secret_for_client_id(client_id)
-            if client_secret is not None:
-                auth = (client_id, client_secret)
-            else:
-                auth = None
+            auth = None
 
         try:
             response = requests.post(
