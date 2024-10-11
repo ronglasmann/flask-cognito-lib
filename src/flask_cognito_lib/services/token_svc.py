@@ -206,8 +206,9 @@ class TokenService:
         )
 
         # Check nonce value to prevent replay attacks
-        if nonce and claims["nonce"] != nonce:
-            raise TokenVerifyError("Token nonce check failed")
+        if "nonce" in claims:
+            if nonce and claims["nonce"] != nonce:
+                raise TokenVerifyError("Token nonce check failed")
 
         return claims
 
