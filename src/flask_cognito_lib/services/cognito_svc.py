@@ -213,7 +213,11 @@ class CognitoService:
             auth = (client_id, self.cfg.user_pool_default_client_secret)
             # auth = (self.cfg.user_pool_client_id, self.cfg.user_pool_client_secret)
         else:
-            auth = None
+            client_secret = self.cfg.get_secret_for_client_id(client_id)
+            if client_secret is not None:
+                auth = (client_id, client_secret)
+            else:
+                auth = None
 
         try:
             response = requests.post(
