@@ -124,7 +124,7 @@ class CognitoAuth:
         if session_args is None:
             session_args = get_session_args(sess)
         print(f"request_args: {request_args}")
-        print(f"request_args: {session_args}")
+        print(f"session_args: {session_args}")
         print(f"expected_state: {expected_state}")
         print(f"code_verifier: {code_verifier}")
         # try:
