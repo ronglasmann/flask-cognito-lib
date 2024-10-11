@@ -25,7 +25,9 @@ def get_client_id(cognito_auth, req=None, req_args=None, sess=None, sess_args=No
     print(f"sess_args: {sess_args}")
     client_id = req_args.get("client_id", None)
     if client_id is None:
-        client_id = cognito_auth.cfg.user_pool_default_client_id
+        client_id = sess_args.get("client_id", None)
+        if client_id is None:
+            client_id = cognito_auth.cfg.user_pool_default_client_id
     print(f"client_id: {client_id}")
     return client_id
 
