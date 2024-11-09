@@ -76,7 +76,7 @@ def validate_and_store_tokens(
             leeway=cognito_auth.cfg.cognito_expiration_leeway,
         )
         if 'email' in user_info:
-            print(f"email in user_info")
+            # print(f"email in user_info")
             user_info['id'] = user_info['sub']
             user_info['name'] = user_info['email'][:user_info['email'].find('@')]
             user_info['is_active'] = 'True'
@@ -84,7 +84,7 @@ def validate_and_store_tokens(
             # user_info['hashed_password'] = ''
 
         else:
-            print(f"email not in user_info")
+            print(f"user_info is None")
             user_info = None
 
     if user_info is not None:
@@ -199,8 +199,8 @@ def cognito_login_callback(fn):
             email = os.getenv("AWS_COGNITO_DISABLED_USER_EMAIL", None)
             name = os.getenv("AWS_COGNITO_DISABLED_USER_NAME", None)
             if user_id is None or email is None or name is None:
-                raise Exception(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
-                                f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
+                raise CognitoError(f"'AWS_COGNITO_DISABLED_USER_ID', 'AWS_COGNITO_DISABLED_USER_EMAIL', and "
+                                   f"'AWS_COGNITO_DISABLED_USER_NAME' must be set when 'AWS_COGNITO_DISABLED'")
             user_info = {
                 'id': user_id,
                 'email': email,
@@ -216,10 +216,10 @@ def cognito_login_callback(fn):
         state = session["state"]
         nonce = session["nonce"]
 
-        print(f"request.args: {request.args}")
-        print(f"code_verifier: {code_verifier}")
-        print(f"state: {state}")
-        print(f"nonce: {nonce}")
+        # print(f"request.args: {request.args}")
+        # print(f"code_verifier: {code_verifier}")
+        # print(f"state: {state}")
+        # print(f"nonce: {nonce}")
 
         # exchange the code for an access token
         # also confirms the returned state is correct

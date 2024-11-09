@@ -69,7 +69,7 @@ class CognitoService:
         if scopes is not None:
             full_url += f"&scope={'+'.join(scopes)}"
 
-        print(f"full_url: {full_url}")
+        # print(f"full_url: {full_url}")
         return full_url
 
     def exchange_code_for_token(self, code: str, code_verifier: str, client_id: str) -> CognitoTokenResponse:
@@ -210,11 +210,11 @@ class CognitoService:
         # Public Client, we assume this when the secret is blank.
         # (Blank secrets are not supported on Confidential Clients)
         if client_id == self.cfg.user_pool_default_client_id:
-            print("default app client")
+            # print("default app client")
             auth = (client_id, self.cfg.user_pool_default_client_secret)
             # auth = (self.cfg.user_pool_client_id, self.cfg.user_pool_client_secret)
         elif client_id == self.cfg.okta_idp_client_id:
-            print("okta app client")
+            # print("okta app client")
             auth = (client_id, self.cfg.okta_idp_client_secret)
         else:
             auth = None
@@ -242,5 +242,5 @@ class CognitoService:
             # Some responses from Cognito are not JSON,so we can ignore this here.
             pass
 
-        print(f"response: {response}")
+        # print(f"response: {response}")
         return response

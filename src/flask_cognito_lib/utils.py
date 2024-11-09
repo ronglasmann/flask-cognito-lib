@@ -1,4 +1,5 @@
 import re
+import traceback
 from base64 import urlsafe_b64encode
 from dataclasses import dataclass
 from hashlib import sha256
@@ -16,19 +17,19 @@ def get_session_args(sess):
 
 
 def get_client_id(cognito_auth, req=None, req_args=None, sess=None, sess_args=None):
-    print(f"get_client_id(...)")
+    # print(f"get_client_id(...)")
     if req_args is None:
         req_args = req.args
-    print(f"req_args: {req_args}")
+    # print(f"req_args: {req_args}")
     if sess_args is None:
         sess_args = get_session_args(sess)
-    print(f"sess_args: {sess_args}")
+    # print(f"sess_args: {sess_args}")
     client_id = req_args.get("client_id", None)
     if client_id is None:
         client_id = sess_args.get("client_id", None)
         if client_id is None:
             client_id = cognito_auth.cfg.user_pool_default_client_id
-    print(f"client_id: {client_id}")
+    # print(f"client_id: {client_id}")
     return client_id
 
 
@@ -39,7 +40,7 @@ def validate_access(cognito_auth, req, sess, groups: Optional[Iterable[str]] = N
         valid = True
 
     else:
-        print(f"cognito auth is enabled")
+        # print(f"cognito auth is enabled")
 
         # Try and validate the access token stored in the cookie
         try:
@@ -50,12 +51,12 @@ def validate_access(cognito_auth, req, sess, groups: Optional[Iterable[str]] = N
                 client_id=client_id,
                 leeway=cognito_auth.cfg.cognito_expiration_leeway,
             )
-            print(f"access token is valid")
+            # print(f"access token is valid")
             valid = True
 
             # Check for required group membership
             if groups:
-                print(f"checking group membership")
+                # print(f"checking group membership")
                 if any_group:
                     valid = any(g in claims["cognito:groups"] for g in groups)
                 else:
@@ -67,6 +68,7 @@ def validate_access(cognito_auth, req, sess, groups: Optional[Iterable[str]] = N
 
         except (TokenVerifyError, KeyError):
             print(f"access token is not valid")
+            traceback.print_exc()
             valid = False
 
     if valid:

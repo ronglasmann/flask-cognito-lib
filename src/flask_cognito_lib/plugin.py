@@ -123,10 +123,10 @@ class CognitoAuth:
             request_args = req.args
         if session_args is None:
             session_args = get_session_args(sess)
-        print(f"request_args: {request_args}")
-        print(f"session_args: {session_args}")
-        print(f"expected_state: {expected_state}")
-        print(f"code_verifier: {code_verifier}")
+        # print(f"request_args: {request_args}")
+        # print(f"session_args: {session_args}")
+        # print(f"expected_state: {expected_state}")
+        # print(f"code_verifier: {code_verifier}")
         # try:
         #     code = request_args["code"]
         #     state = request_args["state"]
@@ -136,15 +136,25 @@ class CognitoAuth:
         #         "client_id / code / state not returned from Cognito"
         #     ) from err
 
+        err_msg = None
+
         if "code" not in request_args:
-            raise CognitoError("code not returned from Cognito")
+            err_msg = "code not returned from Cognito"
+
+        if "state" not in request_args:
+            err_msg = "state not returned from Cognito"
+
+        if err_msg is not None:
+            if "error" in request_args:
+                err_msg += f"; Cognito error - {request_args['error']}"
+            if "error_description" in request_args:
+                err_msg += f" ({request_args['error_description']})"
+            raise CognitoError(err_msg)
 
         code = request_args["code"]
-
-        if "state" in request_args:
-            state = request_args["state"]
-            if state != expected_state:
-                raise CognitoError("State for CSRF is not correct")
+        state = request_args["state"]
+        if state != expected_state:
+            raise CognitoError("State for CSRF is not correct")
 
         client_id = get_client_id(self, req_args=request_args, sess_args=session_args)
 
