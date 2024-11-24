@@ -30,8 +30,8 @@ def app():
 
     # minimum require configuration for CognitoAuth extension
     _app.config["AWS_COGNITO_USER_POOL_ID"] = "eu-west-1_c7O90SNDF"
-    _app.config["AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_ID"] = "4lln66726pp3f4gi1krj0sta9h"
-    _app.config["AWS_COGNITO_USER_POOL_DEFAULT_CLIENT_SECRET"] = "secure-client-secret"
+    _app.config["AWS_COGNITO_USER_POOL_CLIENT_ID"] = "4lln66726pp3f4gi1krj0sta9h"
+    _app.config["AWS_COGNITO_USER_POOL_CLIENT_SECRET"] = "secure-client-secret"
     _app.config["AWS_COGNITO_REDIRECT_URL"] = "http://localhost:5000/postlogin"
     _app.config["AWS_COGNITO_LOGOUT_URL"] = "http://localhost:5000/postlogout"
     _app.config["AWS_COGNITO_DOMAIN"] = (
