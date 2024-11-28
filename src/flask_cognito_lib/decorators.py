@@ -227,7 +227,7 @@ def cognito_login_callback(fn):
         # print(f"state: {state}")
         # print(f"nonce: {nonce}")
 
-        if code_verifier is None || state is None || nonce is None:
+        if code_verifier is None or state is None or nonce is None:
             return fn(*args, **kwargs)
 
         # exchange the code for an access token
