@@ -212,14 +212,23 @@ def cognito_login_callback(fn):
             return resp
 
         # Get the access token return after auth flow with Cognito
-        code_verifier = session["code_verifier"]
-        state = session["state"]
-        nonce = session["nonce"]
+        code_verifier = None
+        state = None
+        nonce = None
+        if "code_verifier" in session:
+            code_verifier = session["code_verifier"]
+        if "state" in session:
+            state = session["state"]
+        if "nonce" in session:
+            nonce = session["nonce"]
 
         # print(f"request.args: {request.args}")
         # print(f"code_verifier: {code_verifier}")
         # print(f"state: {state}")
         # print(f"nonce: {nonce}")
+
+        if code_verifier is None || state is None || nonce is None:
+            return fn(*args, **kwargs)
 
         # exchange the code for an access token
         # also confirms the returned state is correct
