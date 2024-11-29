@@ -66,8 +66,8 @@ def validate_access(cognito_auth, req, sess, groups: Optional[Iterable[str]] = N
                     print(f"group membership check failed")
                     raise CognitoGroupRequiredError
 
-        except (TokenVerifyError, KeyError):
-            print(f"access token is not valid")
+        except (TokenVerifyError, KeyError) as e:
+            print(f"access token is not valid: {e}")
             traceback.print_exc()
             valid = False
 
